@@ -12,6 +12,18 @@ QMAKE_PROJECT_DEPTH = 0 # undocumented qmake flag to force absolute paths in mak
 # These are disabled until proven correct
 DEFINES += QGC_GST_TAISYNC_DISABLED
 DEFINES += QGC_GST_MICROHARD_DISABLED
+# These are disabled until proven correct
+DEFINES += QGC_GST_TAISYNC_DISABLED
+DEFINES += QGC_GST_MICROHARD_DISABLED
+DEFINES += QGC_DISABLE_APM_PLUGIN
+DEFINES += QGC_DISABLE_APM_FACTORY
+# DEFINES += QGC_DISABLE_BLUETOOTH
+# DEFINES += QGC_DISABLE_QTNFC
+# DEFINES += QGC_DISABLE_UVC
+# DEFINES += QGC_DISABLE_PAIRING
+DEFINES += ENABLE_VERBOSE_OUTPUT
+DEFINES += DISABLE_AIRMAP
+#DEFINES += DISABLE_VIDEOSTREAMING
 
 exists($${OUT_PWD}/qgroundcontrol.pro) {
     error("You must use shadow build (e.g. mkdir build; cd build; qmake ../qgroundcontrol.pro).")

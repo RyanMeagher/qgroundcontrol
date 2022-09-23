@@ -85,8 +85,10 @@ while IFS='' read -r library; do
             new_rpath="${new_rpath}:${current_rpath}"
         fi
 
-        # patch the library's rpath
-        patchelf --set-rpath "${new_rpath}" "${library}"
+        if [[ $(cat $library | grep ".debug") == "" ]];then
+          patchelf --set-rpath "${new_rpath}" "${library}"
+          touch "$library.stamp"
+        fi
 
         touch "$library.stamp"
     fi

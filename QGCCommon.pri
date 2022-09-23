@@ -22,7 +22,7 @@ CONFIG += resources_big
 CONFIG += c++17
     
 linux {
-    linux-g++ | linux-g++-64 | linux-g++-32 | linux-clang {
+    linux-g++ | linux-g++-64 | linux-g++-32 | linux-clang | linux-oe-g++ {
         message("Linux build")
         CONFIG  += LinuxBuild
         DEFINES += __STDC_LIMIT_MACROS

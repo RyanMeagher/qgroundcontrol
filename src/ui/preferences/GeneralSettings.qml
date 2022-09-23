@@ -181,6 +181,13 @@ Rectangle {
                                 property Fact _showDumbCameraControl: QGroundControl.settingsManager.flyViewSettings.showSimpleCameraControl
                             }
 
+                            FactCheckBox {
+                                text:       qsTr("Update Home Position")
+                                fact:       _updateHomePosition
+                                visible:    _updateHomePosition.visible
+                                property Fact _updateHomePosition: QGroundControl.settingsManager.flyViewSettings.updateHomePosition
+                            }
+
                             GridLayout {
                                 columns: 2
 
@@ -466,13 +473,13 @@ Rectangle {
 
                                 QGCLabel {
                                     text:           qsTr("Language")
-                                    visible: QGroundControl.settingsManager.appSettings.language.visible
+                                    visible: QGroundControl.settingsManager.appSettings.qLocaleLanguage.visible
                                 }
                                 FactComboBox {
                                     Layout.preferredWidth:  _comboFieldWidth
-                                    fact:                   QGroundControl.settingsManager.appSettings.language
+                                    fact:                   QGroundControl.settingsManager.appSettings.qLocaleLanguage
                                     indexModel:             false
-                                    visible:                QGroundControl.settingsManager.appSettings.language.visible
+                                    visible:                QGroundControl.settingsManager.appSettings.qLocaleLanguage.visible
                                 }
 
                                 QGCLabel {
@@ -755,10 +762,11 @@ Rectangle {
                                         QGroundControl.settingsManager.autoConnectSettings.autoConnectPX4Flow,
                                         QGroundControl.settingsManager.autoConnectSettings.autoConnectLibrePilot,
                                         QGroundControl.settingsManager.autoConnectSettings.autoConnectUDP,
-                                        QGroundControl.settingsManager.autoConnectSettings.autoConnectRTKGPS
+                                        QGroundControl.settingsManager.autoConnectSettings.autoConnectRTKGPS,
+                                        QGroundControl.settingsManager.autoConnectSettings.autoConnectZeroConf,
                                     ]
 
-                                    property var names: [ qsTr("Pixhawk"), qsTr("SiK Radio"), qsTr("PX4 Flow"), qsTr("LibrePilot"), qsTr("UDP"), qsTr("RTK GPS") ]
+                                    property var names: [ qsTr("Pixhawk"), qsTr("SiK Radio"), qsTr("PX4 Flow"), qsTr("LibrePilot"), qsTr("UDP"), qsTr("RTK GPS"), qsTr("Zero-Conf") ]
 
                                     FactCheckBox {
                                         text:       autoConnectRepeater.names[index]
@@ -814,7 +822,7 @@ Rectangle {
                                     visible:                nmeaPortCombo.currentText !== gpsUdpPort && nmeaPortCombo.currentText !== gpsDisabled
                                     id:                     nmeaBaudCombo
                                     Layout.preferredWidth:  _comboFieldWidth
-                                    model:                  [4800, 9600, 19200, 38400, 57600, 115200]
+                                    model:                  [1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600]
 
                                     onActivated: {
                                         if (index != -1) {
@@ -1022,7 +1030,7 @@ Rectangle {
                             FactTextField {
                                 fact:                   adsbGrid.adsbSettings.adsbServerHostAddress
                                 visible:                adsbGrid.adsbSettings.adsbServerHostAddress.visible
-                                Layout.preferredWidth:  _valueFieldWidth
+                                Layout.fillWidth:       true
                             }
 
                             QGCLabel {

@@ -12,6 +12,7 @@ import QtQuick.Controls             2.4
 import QtLocation                   5.3
 import QtPositioning                5.3
 import QtQuick.Dialogs              1.2
+import QtQuick.Layouts              1.11
 
 import QGroundControl               1.0
 import QGroundControl.Airspace      1.0
@@ -108,10 +109,10 @@ FlightMap {
     Connections {
         target: gesture
 
-        onPanStarted:       _disableVehicleTracking = true
-        onFlickStarted:     _disableVehicleTracking = true
-        onPanFinished:      panRecenterTimer.restart()
-        onFlickFinished:    panRecenterTimer.restart()
+        function onPanStarted() {       _disableVehicleTracking = true }
+        function onFlickStarted() {     _disableVehicleTracking = true }
+        function onPanFinished() {      panRecenterTimer.restart() }
+        function onFlickFinished() {    panRecenterTimer.restart() }
     }
 
     function pointInRect(point, rect) {
@@ -207,7 +208,7 @@ FlightMap {
     Connections {
         target:                 _missionController
         ignoreUnknownSignals:   true
-        onNewItemsFromVehicle: {
+        function onNewItemsFromVehicle() {
             var visualItems = _missionController.visualItems
             if (visualItems && visualItems.count !== 1) {
                 mapFitFunctions.fitMapViewportToMissionItems()
@@ -238,7 +239,9 @@ FlightMap {
 
         Connections {
             target:                 QGroundControl.multiVehicleManager
-            onActiveVehicleChanged: trajectoryPolyline.path = _activeVehicle ? _activeVehicle.trajectoryPoints.list() : []
+            function onActiveVehicleChanged(activeVehicle) {
+                trajectoryPolyline.path = _activeVehicle ? _activeVehicle.trajectoryPoints.list() : []
+            }
         }
 
         Connections {
@@ -380,7 +383,7 @@ FlightMap {
 
         Connections {
             target: QGroundControl.multiVehicleManager
-            onActiveVehicleChanged: {
+            function onActiveVehicleChanged(activeVehicle) {
                 if (!activeVehicle) {
                     gotoLocationItem.visible = false
                 }
@@ -418,7 +421,7 @@ FlightMap {
 
         Connections {
             target: QGroundControl.multiVehicleManager
-            onActiveVehicleChanged: {
+            function onActiveVehicleChanged(activeVehicle) {
                 if (!activeVehicle) {
                     orbitMapCircle.visible = false
                 }
@@ -509,38 +512,81 @@ FlightMap {
         }
     }
 
+
     // Handle guided mode clicks
     MouseArea {
         anchors.fill: parent
 
-        QGCMenu {
+        Popup {
             id: clickMenu
+            modal: true
+
             property var coord
-            QGCMenuItem {
-                text:           qsTr("Go to location")
-                visible:        globals.guidedControllerFlyView.showGotoLocation
 
-                onTriggered: {
-                    gotoLocationItem.show(clickMenu.coord)
-                    globals.guidedControllerFlyView.confirmAction(globals.guidedControllerFlyView.actionGoto, clickMenu.coord, gotoLocationItem)
+            function setCoordinates(mouseX, mouseY) {
+                var newX = mouseX
+                var newY = mouseY
+
+                // Filtering coordinates
+                if (newX + clickMenu.width > _root.width) {
+                    newX = _root.width - clickMenu.width
                 }
-            }
-            QGCMenuItem {
-                text:           qsTr("Orbit at location")
-                visible:        globals.guidedControllerFlyView.showOrbit
-
-                onTriggered: {
-                    orbitMapCircle.show(clickMenu.coord)
-                    globals.guidedControllerFlyView.confirmAction(globals.guidedControllerFlyView.actionOrbit, clickMenu.coord, orbitMapCircle)
+                if (newY + clickMenu.height > _root.height) {
+                    newY = _root.height - clickMenu.height
                 }
-            }
-            QGCMenuItem {
-                text:           qsTr("ROI at location")
-                visible:        globals.guidedControllerFlyView.showROI
 
-                onTriggered: {
-                    roiLocationItem.show(clickMenu.coord)
-                    globals.guidedControllerFlyView.confirmAction(globals.guidedControllerFlyView.actionROI, clickMenu.coord, roiLocationItem)
+                // Set coordiantes
+                x = newX
+                y = newY
+            }
+
+            background: Rectangle {
+                radius: ScreenTools.defaultFontPixelHeight * 0.5
+                color: qgcPal.window
+                border.color: qgcPal.text
+            }
+
+            ColumnLayout {
+                id: mainLayout
+                spacing: ScreenTools.defaultFontPixelWidth / 2
+
+                QGCButton {
+                    Layout.fillWidth: true
+                    text: "Go to location"
+                    visible: globals.guidedControllerFlyView.showGotoLocation
+                    onClicked: {
+                        if (clickMenu.opened) {
+                            clickMenu.close()
+                        }
+                        gotoLocationItem.show(clickMenu.coord)
+                        globals.guidedControllerFlyView.confirmAction(globals.guidedControllerFlyView.actionGoto, clickMenu.coord, gotoLocationItem)
+                    }
+                }
+
+                QGCButton {
+                    Layout.fillWidth: true
+                    text: "Orbit at location"
+                    visible: globals.guidedControllerFlyView.showOrbit
+                    onClicked: {
+                        if (clickMenu.opened) {
+                            clickMenu.close()
+                        }
+                        orbitMapCircle.show(clickMenu.coord)
+                        globals.guidedControllerFlyView.confirmAction(globals.guidedControllerFlyView.actionOrbit, clickMenu.coord, orbitMapCircle)
+                    }
+                }
+
+                QGCButton {
+                    Layout.fillWidth: true
+                    text: "ROI at location"
+                    visible: globals.guidedControllerFlyView.showROI
+                    onClicked: {
+                        if (clickMenu.opened) {
+                            clickMenu.close()
+                        }
+                        roiLocationItem.show(clickMenu.coord)
+                        globals.guidedControllerFlyView.confirmAction(globals.guidedControllerFlyView.actionROI, clickMenu.coord, roiLocationItem)
+                    }
                 }
             }
         }
@@ -551,7 +597,8 @@ FlightMap {
                 gotoLocationItem.hide()
                 var clickCoord = _root.toCoordinate(Qt.point(mouse.x, mouse.y), false /* clipToViewPort */)
                 clickMenu.coord = clickCoord
-                clickMenu.popup()
+                clickMenu.setCoordinates(mouse.x, mouse.y)
+                clickMenu.open()
             }
         }
     }

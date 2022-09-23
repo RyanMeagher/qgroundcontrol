@@ -22,7 +22,7 @@
 
 QGC_LOGGING_CATEGORY(CorridorScanComplexItemLog, "CorridorScanComplexItemLog")
 
-const QString CorridorScanComplexItem::name(tr("Corridor Scan"));
+const QString CorridorScanComplexItem::name(CorridorScanComplexItem::tr("Corridor Scan"));
 
 const char* CorridorScanComplexItem::settingsGroup =            "CorridorScan";
 const char* CorridorScanComplexItem::corridorWidthName =        "CorridorWidth";
@@ -346,7 +346,15 @@ void CorridorScanComplexItem::_rebuildTransectsPhase1(void)
                 QList<TransectStyleComplexItem::CoordInfo_t> reversedVertices;
                 for (int j=transectVertices.count()-1; j>=0; j--) {
                     reversedVertices.append(transectVertices[j]);
+
+                    // as we are flying the transect reversed, we also need to swap entry and exit coordinate types
+                    if (reversedVertices.last().coordType == CoordTypeSurveyEntry) {
+                        reversedVertices.last().coordType = CoordTypeSurveyExit;
+                    } else if (reversedVertices.last().coordType == CoordTypeSurveyExit) {
+                        reversedVertices.last().coordType = CoordTypeSurveyEntry;
+                    }
                 }
+
                 transectVertices = reversedVertices;
             } else {
                 reverseVertices = true;

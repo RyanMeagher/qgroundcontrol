@@ -93,6 +93,8 @@ MockLink::MockLink(SharedLinkConfigurationPtr& config)
     _vehicleSystemId    = mockConfig->incrementVehicleId() ?  _nextVehicleSystemId++ : _nextVehicleSystemId;
     _vehicleLatitude    = _defaultVehicleLatitude + ((_vehicleSystemId - 128) * 0.0001);
     _vehicleLongitude   = _defaultVehicleLongitude + ((_vehicleSystemId - 128) * 0.0001);
+    _boardVendorId      = mockConfig->boardVendorId();
+    _boardProductId     = mockConfig->boardProductId();
 
     QObject::connect(this, &MockLink::writeBytesQueuedSignal, this, &MockLink::_writeBytesQueued, Qt::QueuedConnection);
 
@@ -425,7 +427,7 @@ void MockLink::_sendSysStatus(void)
                 4200 * 4,   // voltage_battery
                 8000,       // current_battery
                 _battery1PctRemaining, // battery_remaining
-                0,0,0,0,0,0);
+                0,0,0,0,0,0,0,0,0);
     respondWithMavlinkMessage(msg);
 }
 
@@ -1204,8 +1206,8 @@ void MockLink::_respondWithAutopilotVersion(void)
                                             (uint8_t *)&customVersion,       // flight_custom_version,
                                             (uint8_t *)&customVersion,       // middleware_custom_version,
                                             (uint8_t *)&customVersion,       // os_custom_version,
-                                            0,                               // vendor_id,
-                                            0,                               // product_id,
+                                            _boardVendorId,
+                                            _boardProductId,
                                             0,                               // uid
                                             0);                              // uid2
     respondWithMavlinkMessage(msg);
@@ -1679,7 +1681,7 @@ bool MockLink::_handleRequestMessage(const mavlink_command_long_t& request, bool
     }
         return true;
 
-    case MAVLINK_MSG_ID_COMPONENT_INFORMATION:
+    case MAVLINK_MSG_ID_COMPONENT_METADATA:
         if (_firmwareType == MAV_AUTOPILOT_PX4) {
             _sendGeneralMetaData();
             return true;
@@ -1716,21 +1718,18 @@ void MockLink::_sendGeneralMetaData(void)
 {
     mavlink_message_t   responseMsg;
 #if 1
-    char                metaDataURI[MAVLINK_MSG_COMPONENT_INFORMATION_FIELD_GENERAL_METADATA_URI_LEN]       = "mftp://[;comp=1]general.json";
+    char                metaDataURI[MAVLINK_MSG_COMPONENT_METADATA_FIELD_URI_LEN]       = "mftp://[;comp=1]general.json";
 #else
-    char                metaDataURI[MAVLINK_MSG_COMPONENT_INFORMATION_FIELD_GENERAL_METADATA_URI_LEN]       = "https://bit.ly/31nm0fs";
+    char                metaDataURI[MAVLINK_MSG_COMPONENT_METADATA_FIELD_URI_LEN]       = "https://bit.ly/31nm0fs";
 #endif
-    char                peripheralsMetaDataURI[MAVLINK_MSG_COMPONENT_INFORMATION_FIELD_PERIPHERALS_METADATA_URI_LEN]       = "";
 
-    mavlink_msg_component_information_pack_chan(_vehicleSystemId,
-                                                _vehicleComponentId,
-                                                mavlinkChannel(),
-                                                &responseMsg,
-                                                0,                          // time_boot_ms
-                                                100,                        // general_metadata_file_crc
-                                                metaDataURI,
-                                                0,                          // peripherals_metadata_file_crc
-                                                peripheralsMetaDataURI);
+    mavlink_msg_component_metadata_pack_chan(_vehicleSystemId,
+                                             _vehicleComponentId,
+                                             mavlinkChannel(),
+                                             &responseMsg,
+                                             0,                          // time_boot_ms
+                                             100,                        // general_metadata_file_crc
+                                             metaDataURI);
     respondWithMavlinkMessage(responseMsg);
 }
 

@@ -11,6 +11,7 @@
 #include "VideoManager.h"
 #include "QGCMapEngine.h"
 #include "QGCCameraManager.h"
+#include "FTPManager.h"
 
 #include <QDir>
 #include <QStandardPaths>
@@ -726,6 +727,10 @@ QGCCameraControl::_mavCommandResult(int vehicleId, int component, int command, i
                 qCDebug(CameraControlLog) << "Command failed for" << command;
             }
             switch(command) {
+                case MAV_CMD_RESET_CAMERA_SETTINGS:
+                    _resetting = false;
+                    qCDebug(CameraControlLog) << "Failed to reset camera settings";
+                break;
                 case MAV_CMD_IMAGE_START_CAPTURE:
                 case MAV_CMD_IMAGE_STOP_CAPTURE:
                     if(++_captureInfoRetries < 3) {
@@ -1278,11 +1283,7 @@ QGCCameraControl::_processConditionTest(const QString conditionTest)
     QStringList test;
 
     auto split = [&conditionTest](const QString& sep ) {
-#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
-        return conditionTest.split(sep, QString::SkipEmptyParts);
-#else
         return conditionTest.split(sep, Qt::SkipEmptyParts);
-#endif
     };
 
     if(conditionTest.contains("!=")) {
@@ -1330,11 +1331,7 @@ QGCCameraControl::_processCondition(const QString condition)
     bool result = true;
     bool andOp  = true;
     if(!condition.isEmpty()) {
-#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
-        QStringList scond = condition.split(" ", QString::SkipEmptyParts);
-#else
         QStringList scond = condition.split(" ", Qt::SkipEmptyParts);
-#endif
         while(scond.size()) {
             QString test = scond.first();
             scond.removeFirst();
@@ -1958,6 +1955,21 @@ QGCCameraControl::_handleDefinitionFile(const QString &url)
 {
     //-- First check and see if we have it cached
     QFile xmlFile(_cacheFile);
+
+    QString ftpPrefix(QStringLiteral("%1://").arg(FTPManager::mavlinkFTPScheme));
+    if (url.startsWith(ftpPrefix, Qt::CaseInsensitive)) {
+        int ver = static_cast<int>(_info.cam_definition_version);
+        QString fileName = QString::asprintf("%s_%s_%03d.xml",
+            _vendor.toStdString().c_str(),
+            _modelName.toStdString().c_str(),
+            ver);
+        connect(_vehicle->ftpManager(), &FTPManager::downloadComplete, this, &QGCCameraControl::_ftpDownloadComplete);
+        _vehicle->ftpManager()->download(url,
+            qgcApp()->toolbox()->settingsManager()->appSettings()->parameterSavePath().toStdString().c_str(),
+            fileName);
+        return;
+    }
+
     if (!xmlFile.exists()) {
         qCDebug(CameraControlLog) << "No camera definition file cached";
         _httpRequest(url);
@@ -1994,7 +2006,7 @@ QGCCameraControl::_httpRequest(const QString &url)
     tempProxy.setType(QNetworkProxy::DefaultProxy);
     _netManager->setProxy(tempProxy);
     QNetworkRequest request(url);
-    request.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, true);
     QSslConfiguration conf = request.sslConfiguration();
     conf.setPeerVerifyMode(QSslSocket::VerifyNone);
     request.setSslConfiguration(conf);
@@ -2026,6 +2038,27 @@ QGCCameraControl::_downloadFinished()
     }
     emit dataReady(data);
     //reply->deleteLater();
+}
+
+void QGCCameraControl::_ftpDownloadComplete(const QString& fileName, const QString& errorMsg)
+{
+    qCDebug(CameraControlLog) << "FTP Download completed: " << fileName << ", " << errorMsg;
+
+    disconnect(_vehicle->ftpManager(), &FTPManager::downloadComplete, this, &QGCCameraControl::_ftpDownloadComplete);
+    QFile xmlFile(fileName);
+
+    if (!xmlFile.exists()) {
+        qCDebug(CameraControlLog) << "No camera definition file present after ftp download completed";
+        return;
+    }
+    if (!xmlFile.open(QIODevice::ReadOnly)) {
+        qWarning() << "Could not read downloaded camera definition file: " << fileName;
+        return;
+    }
+
+    _cached = true;
+    QByteArray bytes = xmlFile.readAll();
+    emit dataReady(bytes);
 }
 
 //-----------------------------------------------------------------------------

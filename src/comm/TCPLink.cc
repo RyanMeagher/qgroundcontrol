@@ -50,7 +50,7 @@ void TCPLink::_writeDebugBytes(const QByteArray data)
             ascii.append(219);
         }
     }
-    qDebug() << "Sent" << size << "bytes to" << _tcpConfig->address().toString() << ":" << _tcpConfig->port() << "data:";
+    qDebug() << "Sent" << size << "bytes to" << _tcpConfig->host() << ":" << _tcpConfig->port() << "data:";
     qDebug() << bytes;
     qDebug() << "ASCII:" << ascii;
 }
@@ -114,19 +114,10 @@ bool TCPLink::_hardwareConnect()
     _socket = new QTcpSocket();
     QObject::connect(_socket, &QIODevice::readyRead, this, &TCPLink::_readBytes);
 
-#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
-    QSignalSpy errorSpy(_socket, static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::error));
-#else
     QSignalSpy errorSpy(_socket, &QAbstractSocket::errorOccurred);
-#endif
-#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
-    QObject::connect(_socket,static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::error),
-                     this, &TCPLink::_socketError);
-#else
     QObject::connect(_socket, &QAbstractSocket::errorOccurred, this, &TCPLink::_socketError);
-#endif
 
-    _socket->connectToHost(_tcpConfig->address(), _tcpConfig->port());
+    _socket->connectToHost(_tcpConfig->host(), _tcpConfig->port());
 
     // Give the socket a second to connect to the other side otherwise error out
     if (!_socket->waitForConnected(1000))
@@ -164,48 +155,16 @@ bool TCPLink::isConnected() const
 //--------------------------------------------------------------------------
 //-- TCPConfiguration
 
-static bool is_ip(const QString& address)
-{
-    int a,b,c,d;
-    if (sscanf(address.toStdString().c_str(), "%d.%d.%d.%d", &a, &b, &c, &d) != 4
-            && strcmp("::1", address.toStdString().c_str())) {
-        return false;
-    } else {
-        return true;
-    }
-}
-
-static QString get_ip_address(const QString& address)
-{
-    if(is_ip(address))
-        return address;
-    // Need to look it up
-    QHostInfo info = QHostInfo::fromName(address);
-    if (info.error() == QHostInfo::NoError)
-    {
-        QList<QHostAddress> hostAddresses = info.addresses();
-        for (int i = 0; i < hostAddresses.size(); i++)
-        {
-            // Exclude all IPv6 addresses
-            if (!hostAddresses.at(i).toString().contains(":"))
-            {
-                return hostAddresses.at(i).toString();
-            }
-        }
-    }
-    return {};
-}
-
 TCPConfiguration::TCPConfiguration(const QString& name) : LinkConfiguration(name)
 {
     _port    = QGC_TCP_PORT;
-    _address = QHostAddress::Any;
+    _host    = QLatin1String("0.0.0.0");
 }
 
 TCPConfiguration::TCPConfiguration(TCPConfiguration* source) : LinkConfiguration(source)
 {
     _port    = source->port();
-    _address = source->address();
+    _host    = source->host();
 }
 
 void TCPConfiguration::copyFrom(LinkConfiguration *source)
@@ -214,7 +173,7 @@ void TCPConfiguration::copyFrom(LinkConfiguration *source)
     auto* usource = qobject_cast<TCPConfiguration*>(source);
     Q_ASSERT(usource != nullptr);
     _port    = usource->port();
-    _address = usource->address();
+    _host = usource->host();
 }
 
 void TCPConfiguration::setPort(quint16 port)
@@ -222,26 +181,16 @@ void TCPConfiguration::setPort(quint16 port)
     _port = port;
 }
 
-void TCPConfiguration::setAddress(const QHostAddress& address)
-{
-    _address = address;
-}
-
 void TCPConfiguration::setHost(const QString host)
 {
-    QString ipAdd = get_ip_address(host);
-    if(ipAdd.isEmpty()) {
-        qWarning() << "TCP:" << "Could not resolve host:" << host;
-    } else {
-        _address = QHostAddress(ipAdd);
-    }
+    _host = host;
 }
 
 void TCPConfiguration::saveSettings(QSettings& settings, const QString& root)
 {
     settings.beginGroup(root);
     settings.setValue("port", (int)_port);
-    settings.setValue("host", address().toString());
+    settings.setValue("host", _host);
     settings.endGroup();
 }
 
@@ -249,7 +198,6 @@ void TCPConfiguration::loadSettings(QSettings& settings, const QString& root)
 {
     settings.beginGroup(root);
     _port = (quint16)settings.value("port", QGC_TCP_PORT).toUInt();
-    QString address = settings.value("host", _address.toString()).toString();
-    _address = QHostAddress(address);
+    _host = settings.value("host", _host).toString();
     settings.endGroup();
 }

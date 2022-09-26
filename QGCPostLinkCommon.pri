@@ -147,7 +147,7 @@ LinuxBuild {
         sqldrivers \
         texttospeech
 
-    !contains(DEFINES, __rasp_pi2__) {
+    !contains(DEFINES, __rasp_pi2__) | !contains(DEFINES, rasp_pi4b__) {
         QT_PLUGIN_LIST += xcbglintegrations
     }
 

@@ -22,9 +22,11 @@ CONFIG += resources_big
 CONFIG += c++17
     
 linux {
-    linux-g++ | linux-g++-64 | linux-g++-32 | linux-clang | linux-oe-g++ {
+    linux-g++ | linux-g++-64 | linux-g++-32 | linux-clang  {
         message("Linux build")
         CONFIG  += LinuxBuild
+
+        DEFINES += __rasp_pi4b__
         DEFINES += __STDC_LIMIT_MACROS
         DEFINES += QGC_GST_TAISYNC_ENABLED
         DEFINES += QGC_GST_MICROHARD_ENABLED 
@@ -38,12 +40,31 @@ linux {
                 -Wno-unused-parameter \     # gst_plugins-good has these errors
                 -Wno-implicit-fallthrough   # gst_plugins-good has these errors
         }
-    } else : linux-rasp-pi2-g++ {
+    } else : linux-oe-g++ {
+        message("Yocto raspberry-pi 4B build")
+        CONFIG += LinuxBuild
+        DEFINES += __rasp_pi4b__
+        DEFINES += __STDC_LIMIT_MACROS
+        DEFINES += QGC_GST_TAISYNC_ENABLED
+        DEFINES += QGC_GST_MICROHARD_ENABLED
+
+        DEFINES += ENABLE_VERBOSE_OUTPUT
+        DEFINES += DISABLE_AIRMAP
+
+        #DEFINES += QGC_DISABLE_APM_PLUGIN
+        #DEFINES += QGC_DISABLE_APM_FACTORY
+        #DEFINES += QGC_DISABLE_BLUETOOTH
+        #DEFINES += QGC_DISABLE_QTNFC
+        #DEFINES += QGC_DISABLE_UVC
+        #DEFINES += QGC_DISABLE_PAIRING
+        #DEFINES += DISABLE_VIDEOSTREAMING
+
+}else : linux-rasp-pi2-g++ {
         message("Linux R-Pi2 build")
         CONFIG += LinuxBuild
         DEFINES += __STDC_LIMIT_MACROS __rasp_pi2__
         DEFINES += QGC_GST_TAISYNC_ENABLED
-        DEFINES += QGC_GST_MICROHARD_ENABLED 
+        DEFINES += QGC_GST_MICROHARD_ENABLED
     } else : android-clang {
         CONFIG += AndroidBuild MobileBuild
         DEFINES += __android__

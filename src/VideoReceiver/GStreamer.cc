@@ -236,7 +236,7 @@ GStreamer::initialize(int argc, char* argv[], int debuglevel)
     GstElement *sink = gst_element_factory_make("qmlglsink", nullptr);
 
     if (sink == nullptr) {
-        GST_PLUGIN_STATIC_REGISTER(qmlgl);
+        //GST_PLUGIN_STATIC_REGISTER(qmlgl);
         sink = gst_element_factory_make("qmlglsink", nullptr);
     }
 

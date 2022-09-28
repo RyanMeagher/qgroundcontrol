@@ -130,7 +130,7 @@ include_directories(
     VideoReceiver
     )
 
-add_subdirectory(${QGC_ROOT}/libs/qmlglsink qmlglsink.build)
+#add_subdirectory(${QGC_ROOT}/libs/qmlglsink qmlglsink.build)
 add_subdirectory(${QGC_ROOT}/src/VideoReceiver VideoReceiver.build)
 
 set(VIDEORECIVERAPP_SOURCES main.cpp ${QGC_ROOT}/src/QGCLoggingCategory.cc)

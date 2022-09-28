@@ -43,6 +43,11 @@ linux {
     } else : linux-oe-g++ {
         message("Yocto raspberry-pi 4B build")
         CONFIG += LinuxBuild
+
+        # dont do any post link stuff
+        CONFIG += QGC_DISABLE_BUILD_SETUP
+        CONFIG += QGC_DISABLE_INSTALLER_SETUP
+
         DEFINES += __rasp_pi4b__
         DEFINES += __STDC_LIMIT_MACROS
         DEFINES += QGC_GST_TAISYNC_ENABLED

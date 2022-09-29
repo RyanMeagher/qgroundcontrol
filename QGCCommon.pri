@@ -26,7 +26,6 @@ linux {
         message("Linux build")
         CONFIG  += LinuxBuild
 
-        DEFINES += __rasp_pi4b__
         DEFINES += __STDC_LIMIT_MACROS
         DEFINES += QGC_GST_TAISYNC_ENABLED
         DEFINES += QGC_GST_MICROHARD_ENABLED 
@@ -41,14 +40,14 @@ linux {
                 -Wno-implicit-fallthrough   # gst_plugins-good has these errors
         }
     } else : linux-oe-g++ {
-        message("Yocto raspberry-pi 4B build")
+        message("Yocto raspberry-pi 4/4B build")
         CONFIG += LinuxBuild
+        DEFINES += __rasp_pi4__
 
         # dont do any post link stuff
         CONFIG += QGC_DISABLE_BUILD_SETUP
         CONFIG += QGC_DISABLE_INSTALLER_SETUP
 
-        DEFINES += __rasp_pi4b__
         DEFINES += __STDC_LIMIT_MACROS
         DEFINES += QGC_GST_TAISYNC_ENABLED
         DEFINES += QGC_GST_MICROHARD_ENABLED

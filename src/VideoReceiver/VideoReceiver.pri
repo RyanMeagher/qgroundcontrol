@@ -12,8 +12,11 @@
 #
 
 LinuxBuild {
-#QT += x11extras waylandclient
     QT +=  waylandclient
+    !contains(DEFINES, __rasp_pi4__) {
+        QT += x11extras
+    }
+
     CONFIG += link_pkgconfig
     packagesExist(gstreamer-1.0) {
         PKGCONFIG   += gstreamer-1.0  gstreamer-video-1.0 gstreamer-gl-1.0 egl

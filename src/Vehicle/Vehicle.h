@@ -1027,6 +1027,8 @@ private:
     void _handleAttitude                (mavlink_message_t& message);
     void _handleAttitudeQuaternion      (mavlink_message_t& message);
     void _handleStatusText              (mavlink_message_t& message);
+    void _handleDepth                   (mavlink_message_t& message);
+    void _handleTetherInfo              (mavlink_message_t& message);
     void _handleOrbitExecutionStatus    (const mavlink_message_t& message);
     void _handleGimbalOrientation       (const mavlink_message_t& message);
     void _handleObstacleDistance        (const mavlink_message_t& message);
@@ -1337,6 +1339,8 @@ private:
     Fact _distanceToGCSFact;
     Fact _hobbsFact;
     Fact _throttlePctFact;
+    Fact _depthFact;
+    Fact _tetherReleasedLengthFact;
 
     VehicleGPSFactGroup             _gpsFactGroup;
     VehicleGPS2FactGroup            _gps2FactGroup;
@@ -1389,6 +1393,9 @@ private:
     static const char* _distanceToGCSFactName;
     static const char* _hobbsFactName;
     static const char* _throttlePctFactName;
+    static const char* _depthFactName;
+    static const char* _tetherReleasedLengthFactName;
+
 
     static const char* _gpsFactGroupName;
     static const char* _gps2FactGroupName;

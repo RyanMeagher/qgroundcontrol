@@ -95,6 +95,8 @@ const char* Vehicle::_headingToHomeFactName =       "headingToHome";
 const char* Vehicle::_distanceToGCSFactName =       "distanceToGCS";
 const char* Vehicle::_hobbsFactName =               "hobbs";
 const char* Vehicle::_throttlePctFactName =         "throttlePct";
+const char* Vehicle::_depthFactName =                   "depth";
+const char* Vehicle::_tetherReleasedLengthFactName =    "tetherReleasedLength";
 
 const char* Vehicle::_gpsFactGroupName =                "gps";
 const char* Vehicle::_gps2FactGroupName =               "gps2";
@@ -110,6 +112,9 @@ const char* Vehicle::_escStatusFactGroupName =          "escStatus";
 const char* Vehicle::_estimatorStatusFactGroupName =    "estimatorStatus";
 const char* Vehicle::_terrainFactGroupName =            "terrain";
 const char* Vehicle::_hygrometerFactGroupName =         "hygrometer";
+
+
+
 
 // Standard connected vehicle
 Vehicle::Vehicle(LinkInterface*             link,
@@ -156,6 +161,8 @@ Vehicle::Vehicle(LinkInterface*             link,
     , _distanceToGCSFact            (0, _distanceToGCSFactName,     FactMetaData::valueTypeDouble)
     , _hobbsFact                    (0, _hobbsFactName,             FactMetaData::valueTypeString)
     , _throttlePctFact              (0, _throttlePctFactName,       FactMetaData::valueTypeUint16)
+    , _depthFact                    (0, _depthFactName,             FactMetaData::valueTypeDouble)
+    , _tetherReleasedLengthFact     (0, _tetherReleasedLengthFactName, FactMetaData::valueTypeDouble)
     , _gpsFactGroup                 (this)
     , _gps2FactGroup                (this)
     , _windFactGroup                (this)
@@ -432,6 +439,8 @@ void Vehicle::_commonInit()
     _addFact(&_headingToHomeFact,       _headingToHomeFactName);
     _addFact(&_distanceToGCSFact,       _distanceToGCSFactName);
     _addFact(&_throttlePctFact,         _throttlePctFactName);
+    _addFact(&_depthFact,               _depthFactName);
+    _addFact(&_tetherReleasedLengthFact, _tetherReleasedLengthFactName);
 
     _hobbsFact.setRawValue(QVariant(QString("0000:00:00")));
     _addFact(&_hobbsFact,               _hobbsFactName);
@@ -754,6 +763,12 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
         break;
     case MAVLINK_MSG_ID_OBSTACLE_DISTANCE:
         _handleObstacleDistance(message);
+        break;
+    case MAVLINK_MSG_ID_CURRENT_DEPTH:
+        _handleDepth(message);
+        break;
+    case MAVLINK_MSG_ID_TETHER_INFO:
+        _handleTetherInfo(message);
         break;
 
     case MAVLINK_MSG_ID_EVENT:
@@ -1267,6 +1282,17 @@ void Vehicle::_handleAltitude(mavlink_message_t& message)
     _altitudeMessageAvailable = true;
     _altitudeRelativeFact.setRawValue(altitude.altitude_relative);
     _altitudeAMSLFact.setRawValue(altitude.altitude_amsl);
+}
+
+void Vehicle::_handleDepth(mavlink_message_t &message) {
+    mavlink_current_depth_t depth;
+    mavlink_msg_current_depth_decode(&message, &depth);
+    _depthFact.setRawValue(depth.current_depth);
+}
+void Vehicle::_handleTetherInfo(mavlink_message_t &message) {
+    mavlink_tether_info_t tether_info;
+    mavlink_msg_tether_info_decode(&message, &tether_info);
+    _tetherReleasedLengthFact.setRawValue(tether_info.current_released);
 }
 
 void Vehicle::_setCapabilities(uint64_t capabilityBits)
